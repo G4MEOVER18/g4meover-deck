@@ -1,0 +1,10 @@
+{
+  "name": "esp-now-smoke",
+  "description": "Rauchtest mit RUECKKANAL: WROOM broadcastet signierte STATUS-Frames; Erfolg = ein Satellit validiert UND schickt einen signierten ACK zurueck (via WROOM sichtbar). Echtes Ergebnis, nicht nur 'gesendet'.",
+  "requires": ["ESP32-WROOM (Relay)"],
+  "steps": [
+    {"type": "precheck"},
+    {"type": "note", "text": "3x STATUS ueber ESP-NOW; verifiziert via zurueckkommendem Satelliten-ACK"},
+    {"type": "sat", "action": "ping", "ack": true, "repeat": 3}
+  ]
+}

@@ -1,0 +1,16 @@
+[Unit]
+Description=G4MEOVER Deck Control-Daemon (Ökosystem-Backend)
+After=network.target
+
+[Service]
+Type=simple
+Environment=PYTHONPATH=@PREFIX@/deck:@PREFIX@/vendor
+ExecStart=@PREFIX@/venv/bin/python @PREFIX@/deck/deck_daemon.py
+Restart=on-failure
+RestartSec=3
+# UART + USB brauchen dialout-Gruppe
+SupplementaryGroups=dialout
+StateDirectory=g4meover-deck
+
+[Install]
+WantedBy=multi-user.target

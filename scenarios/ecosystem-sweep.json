@@ -1,0 +1,42 @@
+{
+  "name": "ecosystem-sweep",
+  "description": "Multi-Funk-Sweep ueber das ganze Oekosystem: Flipper (USB-RPC), Satelliten (ESP-NOW 2.4G), Zigbee (802.15.4) - alle Baender in EINEM Lauf, ein Report.",
+  "requires": [
+    "Flipper Zero",
+    "ESP32-WROOM (Relay)",
+    "Heltec LoRa v3",
+    "CC2531 Zigbee"
+  ],
+  "watch": "Heltec LoRa v3",
+  "steps": [
+    {
+      "type": "precheck"
+    },
+    {
+      "type": "note",
+      "text": "1) Flipper ueber USB-RPC"
+    },
+    {
+      "type": "flipper",
+      "cmd": "device_info"
+    },
+    {
+      "type": "note",
+      "text": "2) Satelliten ueber ESP-NOW"
+    },
+    {
+      "type": "sat",
+      "action": "ping",
+      "repeat": 2,
+      "ack": true
+    },
+    {
+      "type": "note",
+      "text": "3) Zigbee-Koordinator ueber 802.15.4"
+    },
+    {
+      "type": "zigbee",
+      "action": "info"
+    }
+  ]
+}

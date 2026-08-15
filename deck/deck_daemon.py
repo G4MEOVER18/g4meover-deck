@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""G4MEOVER Deck — Control-Daemon (HTTP-API).
+
+Das Backend, an das die einheitliche Ökosystem-UI andockt ("alles an einem Punkt").
+Bündelt Satelliten-Funk (ukfe_rf über Pi-UART) und Flipper (USB-RPC) hinter einer
+schlanken lokalen HTTP-API — stdlib-only, keine Fremd-Deps, läuft als systemd-Dienst.
+
+Endpunkte (GET/POST, JSON):
+  GET  /status               -> Geräte, Funktechnologien, Counter
+  POST /sat/ping             -> STATUS an Satelliten
+  POST /sat/trigger  {id,delay}
+  POST /sat/deauth   {bssid,channel}
+  GET  /flipper/info
+Jede Antwort trägt {action, device, radio, status} — genau die Felder, die die UI zeigt.
+"""
+from __future__ import annotations
+import json
+import os
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import satellite_link
+
+HOST, PORT = "0.0.0.0", 8712
+_link = satellite_link.SatelliteLink()
+DASHBOARD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard.html")
+
+
+def _envelope(action, device, radio, status, **extra):
+    """Einheitliche Antwort — spiegelt die UI-Felder (Aktion/Gerät/Funk/Status)."""
+    return {"action": action, "device": device, "radio": radio, "status": status, **extra}
+
+
+def _flipper_port():
+    try:
+        import flipper_link
+        return flipper_link.find_flipper()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+class Handler(BaseHTTPRequestHandler):
+    def _send(self, obj, code=200):
+        body = json.dumps(obj).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _body(self) -> dict:
+        n = int(self.headers.get("Content-Length", 0) or 0)
+        if not n:
+            return {}
+        try:
+            return json.loads(self.rfile.read(n) or b"{}")
+        except json.JSONDecodeError:
+            return {}
+
+    def log_message(self, *a):  # stiller Betrieb
+        pass
+
+    def _send_html(self, path):
+        try:
+            with open(path, "rb") as f:
+                body = f.read()
+        except OSError:
+            self._send({"error": "dashboard.html fehlt"}, 404); return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        if self.path in ("/", "/index.html"):
+            self._send_html(DASHBOARD)
+        elif self.path == "/scenarios":
+            try:
+                import scenario_runner as sr
+                self._send({"scenarios": sr.list_scenarios()})
+            except Exception as e:  # noqa: BLE001
+                self._send({"scenarios": [], "error": str(e)})
+        elif self.path == "/status":
+            devices = []
+            try:
+                import device_discovery as dd
+                devices = [{"port": d["port"], "device": d["device"], "role": d.get("role"),
+                            "access": d.get("access", [])}
+                           for d in dd.discover() if not d.get("ignore")]
+            except Exception:  # noqa: BLE001
+                pass
+            self._send({
+                "deck": "G4MEOVER",
+                "satellites_uart": _link.port,
+                "flipper": _flipper_port() or "offline",
+                "counter": _link._counter,
+                "devices": devices,
+                "radios": ["868-FSK", "ESP-NOW(2.4G)", "SubGHz-OOK", "NFC", "RFID", "IR", "BLE"],
+            })
+        elif self.path == "/flipper/info":
+            try:
+                import flipper_link
+                with flipper_link.FlipperLink() as fl:
+                    self._send(_envelope("info", "Flipper Zero", "USB-RPC", "ok", data=fl.info()))
+            except Exception as e:  # noqa: BLE001
+                self._send(_envelope("info", "Flipper Zero", "USB-RPC", "error", error=str(e)), 503)
+        else:
+            self._send({"error": "unknown endpoint"}, 404)
+
+    def do_POST(self):
+        b = self._body()
+        try:
+            if self.path == "/scenario/run":
+                import scenario_runner as sr
+                name = b.get("name", "")
+                try:
+                    scenario = sr.load(name)
+                except FileNotFoundError:
+                    self._send({"error": f"Szenario '{name}' nicht gefunden"}, 404); return
+                report, passed = sr.run(scenario, dry_run=bool(b.get("dry_run", False)))
+                self._send({"name": name, "passed": passed, "report": report})
+            elif self.path == "/sat/ping":
+                c = _link.status()
+                self._send(_envelope("ping", "Satelliten", "ESP-NOW/868", "sent", counter=c))
+            elif self.path == "/sat/trigger":
+                c = _link.trigger(int(b.get("id", 0)), int(b.get("delay", 0)))
+                self._send(_envelope("trigger", "Satelliten", "ESP-NOW/868", "sent",
+                                     counter=c, id=b.get("id", 0)))
+            elif self.path == "/sat/deauth":
+                bssid = bytes(int(x, 16) for x in str(b["bssid"]).replace("-", ":").split(":"))
+                c = _link.wifi_deauth(bssid, int(b.get("channel", 1)))
+                self._send(_envelope("wifi_deauth", "ESP32-Satellit", "WiFi", "sent", counter=c))
+            else:
+                self._send({"error": "unknown endpoint"}, 404)
+        except Exception as e:  # noqa: BLE001
+            self._send(_envelope(self.path, "Satelliten", "?", "error", error=str(e)), 500)
+
+
+def main():
+    print(f"G4MEOVER Deck-Daemon auf http://{HOST}:{PORT}  (UART {_link.port})")
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,18 @@
+#cloud-config
+# G4MEOVER Deck — headless Erstboot-Provisioning (Ubuntu Server für Pi 4).
+# Mit Raspberry Pi Imager als cloud-init user-data schreiben ODER auf die
+# Boot-Partition legen. Provisioniert das Deck-OS ohne Tastatur/Monitor.
+hostname: g4meover-deck
+package_update: true
+packages:
+  - python3
+  - python3-venv
+  - python3-serial
+  - git
+write_files:
+  - path: /etc/g4meover-deck/.provision-marker
+    content: "queued\n"
+runcmd:
+  - [ bash, -c, "git clone --depth 1 https://github.com/G4MEOVER18/g4meover-deck /opt/g4meover-src" ]
+  - [ bash, -c, "cd /opt/g4meover-src && bash install.sh" ]
+  - [ bash, -c, "echo done > /etc/g4meover-deck/.provision-marker" ]

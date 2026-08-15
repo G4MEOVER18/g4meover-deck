@@ -1,0 +1,16 @@
+# G4MEOVER Deck — Konfiguration (nach /etc/g4meover-deck/deck.conf kopiert)
+
+[satellites]
+# Pi-GPIO-UART zum WROOM-Relay / Heltec. Pi 4: /dev/serial0 -> ttyAMA0.
+uart_port = /dev/serial0
+uart_baud = 115200
+# Rolling-Counter-Persistenz (Anti-Replay über Reboots)
+counter_file = /var/lib/g4meover-deck/counter
+
+[flipper]
+# leer = automatische Erkennung an /dev/ttyACM*
+port =
+
+[daemon]
+http_host = 0.0.0.0
+http_port = 8712

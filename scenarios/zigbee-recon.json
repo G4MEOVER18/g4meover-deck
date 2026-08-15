@@ -1,0 +1,9 @@
+{
+  "name": "zigbee-recon",
+  "description": "CC2531-Koordinator identifizieren (ZNP): Erreichbarkeit, Capabilities, Z-Stack-Version. Echtes 802.15.4-Radio im Oekosystem.",
+  "requires": ["CC2531 Zigbee"],
+  "steps": [
+    {"type": "precheck"},
+    {"type": "zigbee", "action": "info"}
+  ]
+}

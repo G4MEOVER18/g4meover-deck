@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G4MEOVER Deck — Konsole</title>
+<style>
+  :root{
+    --bg:#0A0D12; --panel:#111722; --panel2:#0D131C; --ink:#E7EDF2; --sub:#AAB6C4;
+    --muted:#6B7889; --line:#1D2634; --line2:#2A3546; --signal:#2DE1C6;
+    --r-868:#F2A93B; --r-espnow:#48B6F0; --r-uart:#2DE1C6; --r-usb:#A78BFA; --r-zig:#C084FC;
+    --ok:#34D399; --tx:#FBBF24; --wait:#5C6B7E; --crit:#F8776B;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;
+    background-image:radial-gradient(1000px 400px at 85% -10%,rgba(45,225,198,.07),transparent 60%);
+    min-height:100vh}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 20px 60px}
+  .mono{font-family:var(--mono)}
+  header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:24px}
+  .skull{font-size:24px;filter:drop-shadow(0 0 8px rgba(45,225,198,.5))}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.01em}
+  h1 span{color:var(--signal)}
+  .live{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--sub);
+    display:flex;align-items:center;gap:7px}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--ok);
+    box-shadow:0 0 0 3px rgba(52,211,153,.22);animation:p 2s infinite}
+  @keyframes p{50%{opacity:.4}}
+  @media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+  h2{font-size:13px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin:26px 0 12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .dev{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;
+    position:relative;overflow:hidden}
+  .dev::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--edge,var(--signal))}
+  .dev .name{font-weight:700;font-size:14px}
+  .dev .role{color:var(--muted);font-size:12px;margin-top:2px}
+  .dev .port{font-family:var(--mono);font-size:11px;color:var(--sub);margin-top:8px}
+  .dev .st{font-family:var(--mono);font-size:11px;color:var(--ok);display:inline-flex;
+    align-items:center;gap:6px;margin-top:8px}
+  .dev .st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .runbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  button{font-family:var(--mono);font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer;
+    border:1px solid var(--line2);background:var(--panel);color:var(--ink);transition:.15s}
+  button:hover{border-color:var(--signal);color:var(--signal)}
+  button:disabled{opacity:.5;cursor:wait}
+  .report{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+  .rrow{display:grid;grid-template-columns:1.5fr 1.4fr 1fr .9fr;gap:8px;padding:10px 16px;
+    align-items:center;border-bottom:1px solid var(--line);font-size:13px}
+  .rrow:last-child{border-bottom:0}
+  .rhead{background:var(--panel2);font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted)}
+  .rrow .act{font-weight:600;font-family:var(--mono);font-size:12px}
+  .rrow .dv{color:var(--sub)}
+  .band{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:6px;justify-self:start;
+    border:1px solid transparent;white-space:nowrap}
+  .b-ESP-NOW{color:var(--r-espnow);border-color:rgba(72,182,240,.35);background:rgba(72,182,240,.12)}
+  .b-USB-RPC{color:var(--r-usb);border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.12)}
+  .b-802\.15\.4{color:var(--r-zig);border-color:rgba(192,132,252,.35);background:rgba(192,132,252,.12)}
+  .b-USB,.b---{color:var(--muted);border-color:var(--line2)}
+  .stt{font-family:var(--mono);font-size:12px;display:inline-flex;align-items:center;gap:6px;justify-self:start}
+  .stt::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+  .s-ok{color:var(--ok)} .s-fail,.s-error{color:var(--crit)} .s-planned,.s-skipped{color:var(--wait)}
+  .verdict{margin-top:14px;font-family:var(--mono);font-size:14px;font-weight:700}
+  .v-ok{color:var(--ok)} .v-fail{color:var(--crit)}
+  .empty{color:var(--muted);font-family:var(--mono);font-size:13px;padding:20px 16px}
+  footer{margin-top:32px;color:var(--muted);font-size:12px;font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="skull">💀</span>
+    <h1>G4MEOVER <span>Deck</span> — Konsole</h1>
+    <span class="live"><span class="pulse"></span> <span id="clock">verbinde…</span></span>
+  </header>
+
+  <h2>Geräte · Funktechnologien</h2>
+  <div class="grid" id="devices"><div class="empty">lade…</div></div>
+
+  <h2>Szenarien · Labor</h2>
+  <div class="runbar" id="runbar"></div>
+  <div class="report" id="report"><div class="empty">Ein Szenario wählen, um es live zu fahren.</div></div>
+  <div class="verdict" id="verdict"></div>
+
+  <footer>ein Vokabular · jedes Gerät seine Stärke · alles an einem Punkt — nur autorisierte Tests.</footer>
+</div>
+
+<script>
+const EDGE = {
+  "Flipper Zero":"var(--r-usb)","ESP32-WROOM (Relay)":"var(--r-espnow)",
+  "Heltec LoRa v3":"var(--r-868)","LilyGo T-Dongle S3":"var(--r-espnow)","CC2531 Zigbee":"var(--r-zig)"
+};
+function bandClass(r){return "band b-"+String(r).replace(/[^A-Za-z0-9.\-]/g,"");}
+
+async function loadStatus(){
+  try{
+    const s = await (await fetch("/status")).json();
+    document.getElementById("clock").textContent =
+      `${(s.devices||[]).length} Geräte · Counter ${s.counter}`;
+    const box = document.getElementById("devices");
+    box.innerHTML = "";
+    (s.devices||[]).forEach(d=>{
+      const el = document.createElement("div");
+      el.className="dev"; el.style.setProperty("--edge", EDGE[d.device]||"var(--signal)");
+      el.innerHTML = `<div class="name">${d.device}</div>
+        <div class="role">${d.role||""}</div>
+        <div class="port mono">${d.port} · ${(d.access||[]).join(" · ")}</div>
+        <div class="st">online</div>`;
+      box.appendChild(el);
+    });
+    if(!(s.devices||[]).length) box.innerHTML='<div class="empty">keine Geräte erkannt</div>';
+  }catch(e){ document.getElementById("clock").textContent="Daemon offline"; }
+}
+
+async function loadScenarios(){
+  const bar = document.getElementById("runbar");
+  try{
+    const s = await (await fetch("/scenarios")).json();
+    bar.innerHTML="";
+    (s.scenarios||[]).forEach(n=>{
+      const b=document.createElement("button"); b.textContent="▶ "+n;
+      b.onclick=()=>runScenario(n,b); bar.appendChild(b);
+    });
+  }catch(e){ bar.innerHTML='<span class="empty">Szenarien nicht ladbar</span>'; }
+}
+
+async function runScenario(name, btn){
+  const rep=document.getElementById("report"), verdict=document.getElementById("verdict");
+  document.querySelectorAll("#runbar button").forEach(b=>b.disabled=true);
+  rep.innerHTML='<div class="empty">läuft… '+name+'</div>'; verdict.textContent="";
+  try{
+    const res = await (await fetch("/scenario/run",{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({name})})).json();
+    if(res.error){ rep.innerHTML='<div class="empty">Fehler: '+res.error+'</div>'; return; }
+    let html='<div class="rrow rhead"><span>Aktion</span><span>Gerät</span><span>Funk</span><span>Status</span></div>';
+    res.report.forEach(e=>{
+      html+=`<div class="rrow"><span class="act">${e.action}</span>
+        <span class="dv">${e.device}</span>
+        <span class="${bandClass(e.radio)}">${e.radio}</span>
+        <span class="stt s-${e.status}">${e.status}</span></div>`;
+    });
+    rep.innerHTML=html;
+    verdict.className="verdict "+(res.passed?"v-ok":"v-fail");
+    verdict.textContent = res.passed?"ERGEBNIS: BESTANDEN ✓":"ERGEBNIS: FEHLGESCHLAGEN ✗";
+  }catch(e){ rep.innerHTML='<div class="empty">Daemon-Fehler: '+e+'</div>'; }
+  finally{ document.querySelectorAll("#runbar button").forEach(b=>b.disabled=false);
+    loadStatus(); }
+}
+
+loadStatus(); loadScenarios();
+setInterval(loadStatus, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "spectrum-recon",
+  "description": "HackRF-Weitband-Recon: sweept das sub-GHz-Band (300-930 MHz), findet die staerksten aktiven Signale. Der Router kann Treffer dann an Flipper (Capture/Replay) oder ESP uebergeben. Das Spektrum-Auge des Oekosystems.",
+  "requires": [],
+  "steps": [
+    {"type": "precheck"},
+    {"type": "note", "text": "HackRF erkennen + sub-GHz sweepen"},
+    {"type": "sdr", "action": "detect"},
+    {"type": "sdr", "action": "sweep", "start_mhz": 300, "stop_mhz": 930},
+    {"type": "note", "text": "Top-Signale -> Router waehlt Flipper/ESP/HackRF fuer Detailarbeit"}
+  ]
+}
