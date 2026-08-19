@@ -27,6 +27,9 @@ CMD_WIFI_DEAUTH = 0x21
 CMD_WIFI_STOP = 0x22
 CMD_EVIL_PORTAL = 0x23
 CMD_BEACON_SPAM = 0x24
+CMD_HID_PAYLOAD = 0x50  # args: uint8 idx (benannte Payload-Bibliothek)
+CMD_HID_DUCKY = 0x51    # args: uint8 script_id (eingebautes DuckyScript)
+CMD_HID_STREAM = 0x52   # args: uint8 flags(b0=first,b1=last), rest=DuckyScript-Chunk
 
 _MASK = 0xFFFFFFFF
 
