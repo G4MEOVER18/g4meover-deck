@@ -10,6 +10,7 @@ Endpunkte (GET/POST, JSON):
   POST /sat/ping             -> STATUS an Satelliten
   POST /sat/trigger  {id,delay}
   POST /sat/deauth   {bssid,channel}
+  POST /sat/send     {cmd,args_hex?,label?}  -> generischer ukfe_rf-Befehl vom UI
   GET  /flipper/info
   GET  /lorawan              -> LoRa/TTN-Lagebild: LORIX-Gateway + TTN-Flotte + DogyTag-Telemetrie
 Jede Antwort trägt {action, device, radio, status} — genau die Felder, die die UI zeigt.
@@ -22,7 +23,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import satellite_link
 
 HOST, PORT = "0.0.0.0", 8712
-_link = satellite_link.SatelliteLink()
+import os as _os
+_link = satellite_link.SatelliteLink(
+    port=_os.getenv("DECK_SAT_PORT", "/dev/serial0"),
+    counter_file=_os.getenv("DECK_COUNTER_FILE",
+                            "/var/lib/g4meover-deck/counter"))
 DASHBOARD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard.html")
 
 
@@ -146,6 +151,13 @@ class Handler(BaseHTTPRequestHandler):
                 bssid = bytes(int(x, 16) for x in str(b["bssid"]).replace("-", ":").split(":"))
                 c = _link.wifi_deauth(bssid, int(b.get("channel", 1)))
                 self._send(_envelope("wifi_deauth", "ESP32-Satellit", "WiFi", "sent", counter=c))
+            elif self.path == "/sat/send":
+                # Generischer ukfe_rf-Befehl vom UI: {cmd:int, args_hex?:str} -> ueber Kette an Satelliten
+                cmd = int(b.get("cmd"))
+                args = bytes.fromhex(b["args_hex"]) if b.get("args_hex") else b""
+                c = _link.send(cmd, args)
+                self._send(_envelope("send", "Satelliten", "ESP-NOW/868", "sent",
+                                     counter=c, cmd=f"0x{cmd:02X}", label=b.get("label", "")))
             else:
                 self._send({"error": "unknown endpoint"}, 404)
         except Exception as e:  # noqa: BLE001

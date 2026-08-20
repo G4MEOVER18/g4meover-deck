@@ -34,7 +34,10 @@ class SatelliteLink:
             with open(self.counter_file) as f:
                 return int(f.read().strip() or "0")
         except (OSError, ValueError):
-            return 0
+            # Kein persistenter Counter -> zeit-basiert starten. So liegt der erste
+            # Counter garantiert ueber jedem frueheren Wert (auch nach Neuinstallation),
+            # ohne dass die Satelliten den Frame als Replay verwerfen.
+            return int(time.time())
 
     def _save_counter(self) -> None:
         try:
