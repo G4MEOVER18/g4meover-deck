@@ -21,8 +21,10 @@ ergänzt `TODO.md` (allgemein) um die hardware-/umgebungsgebundenen Punkte.
 ## Live-Tests auf echter Hardware
 - [ ] `deck-ctl status` — VID:PID-Discovery aller Geräte am Pi
 - [ ] Szenario-Labor: `deck-ctl scenario run ecosystem-sweep` (Flipper+Satelliten+Zigbee)
-- [ ] **WPA-Kreis E2E**: `wpa_crack.py capture <sat-port> hs.pcap --wordlist …` gegen EIGENES Testnetz
-      (setzt geflashtes V3-`[HSRAW]` voraus — ✅ Firmware bereit, Flash siehe TODO.md)
+- [x] **WPA-Capture LIVE bewiesen (2026-08-20)**: V3-`[HSRAW]` geflasht, echter 4-Wege-Handshake von
+      `YourDataMyData` (ap A4:CE:DA:AC:70:A8, ch1) gefangen → `deck/captures_YourDataMyData.pcap` (4 EAPOL, gitignored).
+- [ ] **WPA-Crack auf Pi**: `hcxpcapngtool` + `hashcat -m 22000` gegen `captures_YourDataMyData.pcap`
+      (bzw. `wpa_crack.py dict captures_YourDataMyData.pcap wordlists/rockyou.txt`) — nur eigenes Netz.
 - [ ] Dashboard im Browser gegen echte HW (Geräte-Board + Szenario-Buttons)
 
 ## Konvergenz (später)
