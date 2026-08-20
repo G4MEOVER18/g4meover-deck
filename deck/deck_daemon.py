@@ -11,6 +11,7 @@ Endpunkte (GET/POST, JSON):
   POST /sat/trigger  {id,delay}
   POST /sat/deauth   {bssid,channel}
   GET  /flipper/info
+  GET  /lorawan              -> LoRa/TTN-Lagebild: LORIX-Gateway + TTN-Flotte + DogyTag-Telemetrie
 Jede Antwort trägt {action, device, radio, status} — genau die Felder, die die UI zeigt.
 """
 from __future__ import annotations
@@ -95,8 +96,23 @@ class Handler(BaseHTTPRequestHandler):
                 "flipper": _flipper_port() or "offline",
                 "counter": _link._counter,
                 "devices": devices,
-                "radios": ["868-FSK", "ESP-NOW(2.4G)", "SubGHz-OOK", "NFC", "RFID", "IR", "BLE"],
+                "radios": ["868-FSK", "ESP-NOW(2.4G)", "SubGHz-OOK", "NFC", "RFID", "IR", "BLE", "LoRaWAN/TTN"],
             })
+        elif self.path == "/lorawan":
+            # LoRa/TTN-Lagebild: Gateway (LORIX) + Flotte (TTN) + DogyTag-Telemetrie (mosquitto)
+            out = _envelope("lorawan", "LORIX/TTN", "LoRaWAN", "ok")
+            try:
+                import lorix_link
+                out["gateway"] = lorix_link.gateway_status()
+                out["fleet"] = lorix_link.device_fleet()
+            except Exception as e:  # noqa: BLE001
+                out["status"] = "error"; out["error"] = str(e)
+            try:
+                import dogytag_link
+                out["telemetry"] = dogytag_link.summarize(dogytag_link.snapshot(4))
+            except Exception:  # noqa: BLE001
+                pass
+            self._send(out)
         elif self.path == "/flipper/info":
             try:
                 import flipper_link
