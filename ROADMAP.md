@@ -28,6 +28,7 @@ das „Masterpiece"** — soll jeden erdenklichen Befehl ausführen. Der **Pi (D
 | LilyGo `lilygo-ukfe-rx` | ✅ ESP-NOW-Satellit + USB-HID + TFT |
 | Pi-Deck `g4meover-deck` | ✅ code-komplett (ukfe_rf.py, Links, Discovery, Daemon+Dashboard, Szenario-Labor, HackRF) — **noch nicht auf echtem Pi** |
 | CC2531 Zigbee | ✅ ZNP erreichbar (Z-Stack 2.6.3) |
+| **LoRaWAN/TTN (LORIX One + DogyTag)** | ✅ **additiv ins Deck integriert**: `dogytag_link.py` (MQTT-Telemetrie) + `lorix_link.py` (TTN-Gateway+Flotte) + Daemon `/lorawan` + Dashboard-Sektion. Read-only, kein Produktionseingriff. |
 
 **Alle 6 Repos auf GitHub (G4MEOVER18).** `ukfe_rf`-Protokoll byte-genau über C + Python verifiziert.
 
