@@ -9,6 +9,7 @@ Satelliten nur monoton steigende Counter akzeptieren.
 from __future__ import annotations
 import os
 import threading
+import time
 
 import serial  # pyserial
 
@@ -89,3 +90,21 @@ class SatelliteLink:
 
     def abort(self) -> int:
         return self.send(ukfe_rf.CMD_ABORT)
+
+    def hid_ducky(self, script_id: int) -> int:
+        """Loest ein am Satelliten eingebautes DuckyScript per id aus (0x51)."""
+        return self.send(ukfe_rf.CMD_HID_DUCKY, bytes([script_id & 0xFF]))
+
+    def hid_stream(self, script: str, chunk_delay_s: float = 0.05) -> int:
+        """Zerlegt ein beliebig langes DuckyScript in 0x52-Chunks (max 39 Nutzbytes/Frame,
+        1 Byte fuer flags) und streamt sie ueber den Hub an den Satelliten. flags: Bit0=first
+        (Puffer leeren), Bit1=last (tippen). Gibt die Anzahl gesendeter Frames zurueck."""
+        data = script.encode("utf-8", "replace")
+        per = ukfe_rf.MAX_ARGS - 1  # 1 Byte geht fuer flags drauf
+        chunks = [data[i:i + per] for i in range(0, len(data), per)] or [b""]
+        for idx, chunk in enumerate(chunks):
+            flags = (0x01 if idx == 0 else 0x00) | (0x02 if idx == len(chunks) - 1 else 0x00)
+            self.send(ukfe_rf.CMD_HID_STREAM, bytes([flags]) + chunk)
+            if idx < len(chunks) - 1 and chunk_delay_s:
+                time.sleep(chunk_delay_s)  # Satellit muss jeden Frame verarbeiten
+        return len(chunks)

@@ -27,6 +27,9 @@ CMD_WIFI_DEAUTH = 0x21
 CMD_WIFI_STOP = 0x22
 CMD_EVIL_PORTAL = 0x23
 CMD_BEACON_SPAM = 0x24
+CMD_HID_PAYLOAD = 0x50  # args: uint8 idx (benannte Payload-Bibliothek)
+CMD_HID_DUCKY = 0x51    # args: uint8 script_id (eingebautes DuckyScript)
+CMD_HID_STREAM = 0x52   # args: uint8 flags(b0=first,b1=last), rest=DuckyScript-Chunk
 
 _MASK = 0xFFFFFFFF
 
@@ -101,11 +104,18 @@ def make_wifi_deauth(secret: bytes, counter: int, bssid: bytes, channel: int) ->
     return build_frame(secret, counter, CMD_WIFI_DEAUTH, bssid + bytes([channel & 0xFF]))
 
 
-# Gemeinsames Geheimnis — IDENTISCH mit RF_SECRET/UKFE_SECRET (out-of-band pairen!).
+# Platzhalter-Secret (PUBLIC). Das echte, out-of-band gepairte Secret liegt lokal in
+# secret_local.py (gitignored) und ueberschreibt diesen Wert zur Laufzeit.
 DEFAULT_SECRET = bytes([
     0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
     0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
 ])
+try:
+    from secret_local import SECRET as _LOCAL_SECRET  # lokale, ungetrackte echte 16 Bytes
+    if len(_LOCAL_SECRET) == SECRET_LEN:
+        DEFAULT_SECRET = bytes(_LOCAL_SECRET)
+except Exception:
+    pass  # ohne lokales Secret bleibt der Platzhalter (nur fuer Selbsttests)
 
 
 if __name__ == "__main__":
