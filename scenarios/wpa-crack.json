@@ -1,0 +1,12 @@
+{
+  "name": "wpa-crack",
+  "description": "WPA/WPA2-Handshake-Analyse: prueft die Cracker-Pipeline (hcxpcapngtool+hashcat), extrahiert Handshakes/PMKID aus einem .pcap (z.B. aus einem 0x25-Handshake-Capture) und faehrt optional einen Dictionary-Angriff. Nur eigene Netze.",
+  "requires": [],
+  "steps": [
+    {"type": "precheck"},
+    {"type": "note", "text": "WPA-Pipeline: pcap -> hcxpcapngtool -> .hc22000 -> hashcat 22000"},
+    {"type": "wpa", "action": "detect"},
+    {"type": "wpa", "action": "info", "pcap": "captures/handshake.pcap"},
+    {"type": "wpa", "action": "dict", "pcap": "captures/handshake.pcap", "wordlist": "wordlists/rockyou.txt", "timeout": 600}
+  ]
+}
