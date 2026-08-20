@@ -1,0 +1,3 @@
+# G4MEOVER Deck — Python-Abhängigkeiten
+pyserial>=3.5      # Satelliten-/Geräte-Serial (ukfe_rf, device_discovery, handshake_capture)
+paho-mqtt>=1.6     # DogyTag-Link: read-only Ingest der TTN/LoRaWAN-Telemetrie aus mosquitto
