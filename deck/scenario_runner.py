@@ -120,6 +120,8 @@ def run(scenario: dict, dry_run: bool = False):
                 passed = _run_zigbee(step, dry_run, report) and passed
             elif t == "sdr":
                 passed = _run_sdr(step, dry_run, report) and passed
+            elif t == "wpa":
+                passed = _run_wpa(step, dry_run, report) and passed
             else:
                 report.append(envelope(t or "?", "—", "—", "skipped"))
     finally:
@@ -231,6 +233,43 @@ def _run_sdr(step, dry_run, report) -> bool:
         return True
     except Exception as e:  # noqa: BLE001
         report.append(envelope(f"sdr:{action}", "HackRF", "1MHz-6GHz", "error", error=str(e)))
+        return False
+
+
+def _run_wpa(step, dry_run, report) -> bool:
+    """WPA-Handshake-Analyse/-Crack. actions: detect | info | dict.
+    Schließt an einen 0x25-Handshake-Capture an (pcap -> hashcat)."""
+    action = step.get("action", "detect")
+    if dry_run:
+        report.append(envelope(f"wpa:{action}", "Deck", "WiFi", "planned"))
+        return True
+    try:
+        import wpa_crack
+        if action == "detect":
+            d = wpa_crack.detect()
+            report.append(envelope("wpa:detect", "Deck", "WiFi",
+                                   "ok" if d["ready"] else "offline", error=d.get("error")))
+            return d["ready"]
+        pcap = step.get("pcap", "")
+        conv = wpa_crack.pcap_to_hc22000(pcap)
+        if conv.get("error") and not conv.get("hc22000"):
+            report.append(envelope(f"wpa:{action}", "Deck", "WiFi", "fail", error=conv["error"]))
+            return False
+        report.append(envelope("wpa:info", "Deck", "WiFi", "ok",
+                               handshakes=conv["count"], networks=conv["networks"][:5]))
+        if action == "info":
+            return conv["count"] > 0
+        if action == "dict":
+            res = wpa_crack.crack_dictionary(conv["hc22000"], step.get("wordlist", ""),
+                                             timeout=int(step.get("timeout", 600)))
+            report.append(envelope("wpa:dict", "Deck", "WiFi",
+                                   "ok" if res["cracked"] else "nohit",
+                                   cracked=res["cracked"], error=res.get("error")))
+            return True
+        report.append(envelope(f"wpa:{action}", "Deck", "WiFi", "skipped"))
+        return True
+    except Exception as e:  # noqa: BLE001
+        report.append(envelope(f"wpa:{action}", "Deck", "WiFi", "error", error=str(e)))
         return False
 
 
