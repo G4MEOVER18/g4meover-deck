@@ -2,3 +2,8 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+
+# Lokaler Secret-Override (echtes Pairing-Secret)
+secret_local.py
+deck/secret_local.py
+.g4meover-deck/
