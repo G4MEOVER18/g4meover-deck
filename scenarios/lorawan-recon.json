@@ -1,0 +1,12 @@
+{
+  "name": "lorawan-recon",
+  "description": "LoRa/TTN-Lagebild: LORIX-One-Gateway-Status + registrierte Geraete-Flotte (TTN, Netzsicht) plus DogyTag-Telemetrie aus dem lokalen mosquitto (Geraetesicht). Read-only, kein Produktionseingriff.",
+  "requires": [],
+  "steps": [
+    {"type": "note", "text": "LoRaWAN-Weitverkehrs-Ohr: LORIX One (8-Kanal) + TTN dogytag-v1"},
+    {"type": "lorawan", "action": "detect"},
+    {"type": "lorawan", "action": "gateway"},
+    {"type": "lorawan", "action": "fleet"},
+    {"type": "dogytag", "action": "snapshot", "seconds": 8}
+  ]
+}

@@ -124,6 +124,8 @@ def run(scenario: dict, dry_run: bool = False):
                 passed = _run_wpa(step, dry_run, report) and passed
             elif t == "dogytag":
                 passed = _run_dogytag(step, dry_run, report) and passed
+            elif t == "lorawan":
+                passed = _run_lorawan(step, dry_run, report) and passed
             else:
                 report.append(envelope(t or "?", "—", "—", "skipped"))
     finally:
@@ -301,6 +303,40 @@ def _run_dogytag(step, dry_run, report) -> bool:
         return True
     except Exception as e:  # noqa: BLE001
         report.append(envelope(f"dogytag:{action}", "DogyTag", "LoRaWAN/TTN", "error", error=str(e)))
+        return False
+
+
+def _run_lorawan(step, dry_run, report) -> bool:
+    """LORIX-One/TTN-Netzsicht (read-only). actions: detect | gateway | fleet.
+    Weitverkehrs-Ohr des Ökosystems (LoRaWAN-Gateway + registrierte Geräte)."""
+    action = step.get("action", "detect")
+    if dry_run:
+        report.append(envelope(f"lorawan:{action}", "LORIX/TTN", "LoRaWAN", "planned"))
+        return True
+    try:
+        import lorix_link
+        if action == "detect":
+            d = lorix_link.detect()
+            report.append(envelope("lorawan:detect", "LORIX/TTN", "LoRaWAN",
+                                   "ok" if d["ready"] else "offline", app=d.get("app"), error=d.get("error")))
+            return d["ready"]
+        if action == "gateway":
+            g = lorix_link.gateway_status()
+            report.append(envelope("lorawan:gateway", "LORIX", "LoRaWAN",
+                                   "ok" if g.get("connected") else "offline",
+                                   uplinks=g.get("uplink_count"), protocol=g.get("protocol"),
+                                   error=g.get("error") or g.get("note")))
+            return bool(g.get("connected"))
+        if action == "fleet":
+            f = lorix_link.device_fleet()
+            report.append(envelope("lorawan:fleet", "LORIX/TTN", "LoRaWAN",
+                                   "ok" if f["count"] else "leer",
+                                   count=f["count"], devices=f["devices"], error=f.get("error")))
+            return f["count"] > 0
+        report.append(envelope(f"lorawan:{action}", "LORIX/TTN", "LoRaWAN", "skipped"))
+        return True
+    except Exception as e:  # noqa: BLE001
+        report.append(envelope(f"lorawan:{action}", "LORIX/TTN", "LoRaWAN", "error", error=str(e)))
         return False
 
 
