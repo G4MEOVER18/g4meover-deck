@@ -81,6 +81,9 @@
   <h2>Geräte · Funktechnologien</h2>
   <div class="grid" id="devices"><div class="empty">lade…</div></div>
 
+  <h2>LoRaWAN · LORIX One · TTN</h2>
+  <div class="grid" id="lorawan"><div class="empty">lade…</div></div>
+
   <h2>Szenarien · Labor</h2>
   <div class="runbar" id="runbar"></div>
   <div class="report" id="report"><div class="empty">Ein Szenario wählen, um es live zu fahren.</div></div>
@@ -114,6 +117,35 @@ async function loadStatus(){
     });
     if(!(s.devices||[]).length) box.innerHTML='<div class="empty">keine Geräte erkannt</div>';
   }catch(e){ document.getElementById("clock").textContent="Daemon offline"; }
+}
+
+async function loadLoRaWAN(){
+  const box=document.getElementById("lorawan");
+  try{
+    const s=await (await fetch("/lorawan")).json();
+    box.innerHTML="";
+    const g=s.gateway||{};
+    const gw=document.createElement("div");
+    gw.className="dev"; gw.style.setProperty("--edge","var(--r-868)");
+    gw.innerHTML=`<div class="name">LORIX One</div>
+      <div class="role">Gateway · ${g.protocol||"?"}</div>
+      <div class="port mono">↑${g.uplink_count||"?"} ↓${g.downlink_count||"?"}</div>
+      <div class="st">${g.connected?"connected":"offline"}</div>`;
+    box.appendChild(gw);
+    const tel={}; (s.telemetry||[]).forEach(t=>tel[t.device]=t);
+    const devs=(s.fleet&&s.fleet.devices)||[];
+    devs.forEach(d=>{
+      const t=tel[d.id]||{};
+      const el=document.createElement("div"); el.className="dev";
+      el.style.setProperty("--edge", d.joined?"var(--signal)":"var(--r-espnow)");
+      el.innerHTML=`<div class="name">${d.id}</div>
+        <div class="role mono">${d.dev_eui||""}</div>
+        <div class="port mono">${t.bat_pct!=null?("bat "+t.bat_pct+"% · "):""}${t.state||""}</div>
+        <div class="st">${d.joined?"joined":(t.joined?"mqtt":"—")}</div>`;
+      box.appendChild(el);
+    });
+    if(!devs.length && !g.connected) box.innerHTML='<div class="empty">keine LoRaWAN-Daten</div>';
+  }catch(e){ box.innerHTML='<div class="empty">LoRaWAN nicht ladbar</div>'; }
 }
 
 async function loadScenarios(){
@@ -151,8 +183,9 @@ async function runScenario(name, btn){
     loadStatus(); }
 }
 
-loadStatus(); loadScenarios();
+loadStatus(); loadScenarios(); loadLoRaWAN();
 setInterval(loadStatus, 5000);
+setInterval(loadLoRaWAN, 15000);
 </script>
 </body>
 </html>
