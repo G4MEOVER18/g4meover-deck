@@ -11,14 +11,16 @@ Feature-Branch→PR→self-merge; Fremd-Code nur mit Lizenzcheck, Logik neu impl
 - [x] 42 Fremd-Repos geklont + `INTEGRATION-MAP.md`, seanec327 analysiert
 - [x] WPA-Cracker ans Deck gekoppelt (`deck/wpa_crack.py` + CLI)
 
-## Tier 0 — sofort fertigstellen
-- [ ] `wpa_crack.py` committen (Feature-Branch → PR → merge)
-- [ ] Optional: Deck-Daemon-Endpoint `POST /wpa/crack` + Szenario-Schritt-Typ `wpa`
-- [ ] `hashcat`/`hcxtools` auf dem Pi/Cracking-Node installieren + einmal echt testen
+> Pi-/hardwaregebundene Punkte werden in **`PI-TODO.md`** geführt.
 
-## Tier 1 — Quick-Wins (reines Deck-Python, kein Flash)
-- [ ] **Handshake→Crack Ende-zu-Ende**: `0x25`-Capture (Satellit, EAPOL@Serial) → .pcap ans Deck → `wpa_crack` → Passwort. Capture-Abgriff automatisieren.
-- [ ] **BadUSB-Payload-Bibliothek** (grugnoymeme, MIT) in den Ducky-Katalog + `hid_stream_send.py --payload <name>`
+## Tier 0 — sofort fertigstellen
+- [x] `wpa_crack.py` committen (PR #2 gemerged)
+- [x] Szenario-Schritt-Typ `wpa` (statt Daemon-Endpoint — Test-Labor ist der richtige Ort)
+- [ ] `hashcat`/`hcxtools` auf dem Pi installieren + echt testen → **PI-TODO.md**
+
+## Tier 1 — Quick-Wins (reines Deck-Python)
+- [x] **Handshake→Crack Ende-zu-Ende (code-komplett):** V3-`[HSRAW]` (PR #4) + `handshake_capture.py` (PR #3) + CLI `capture`. Aktivierung: V3 flashen (siehe unten) + Pi-Tools (PI-TODO).
+- [~] ~~BadUSB-Payload-Bibliothek~~ **verworfen** — grugnoymeme-badUSB ist echte Malware (Ransomware/Keylogger/Stealer). HID bleibt bei autorisierten Test-Markern.
 - [ ] WPA-Ergebnisse mit [[project_hashcat_tool]] verzahnen (gemeinsame Wortlisten/Potfile)
 
 ## Tier 2 — neue Satelliten-Fähigkeiten (Firmware)
