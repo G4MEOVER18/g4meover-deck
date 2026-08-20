@@ -122,6 +122,8 @@ def run(scenario: dict, dry_run: bool = False):
                 passed = _run_sdr(step, dry_run, report) and passed
             elif t == "wpa":
                 passed = _run_wpa(step, dry_run, report) and passed
+            elif t == "dogytag":
+                passed = _run_dogytag(step, dry_run, report) and passed
             else:
                 report.append(envelope(t or "?", "—", "—", "skipped"))
     finally:
@@ -270,6 +272,35 @@ def _run_wpa(step, dry_run, report) -> bool:
         return True
     except Exception as e:  # noqa: BLE001
         report.append(envelope(f"wpa:{action}", "Deck", "WiFi", "error", error=str(e)))
+        return False
+
+
+def _run_dogytag(step, dry_run, report) -> bool:
+    """DogyTag-Telemetrie (read-only) aus dem lokalen mosquitto. actions: detect | snapshot.
+    Additive Anbindung ans bestehende TTN/LoRaWAN-Ökosystem — kein Produktionseingriff."""
+    action = step.get("action", "detect")
+    if dry_run:
+        report.append(envelope(f"dogytag:{action}", "DogyTag", "LoRaWAN/TTN", "planned"))
+        return True
+    try:
+        import dogytag_link
+        if action == "detect":
+            d = dogytag_link.detect()
+            report.append(envelope("dogytag:detect", "DogyTag", "LoRaWAN/TTN",
+                                   "ok" if d["ready"] else "offline",
+                                   broker=d.get("broker"), error=d.get("error")))
+            return d["ready"]
+        if action == "snapshot":
+            snap = dogytag_link.snapshot(float(step.get("seconds", 8)))
+            rows = dogytag_link.summarize(snap)
+            report.append(envelope("dogytag:snapshot", "DogyTag", "LoRaWAN/TTN",
+                                   "ok" if rows else "leer",
+                                   messages=snap["messages"], devices=rows))
+            return snap["messages"] > 0
+        report.append(envelope(f"dogytag:{action}", "DogyTag", "LoRaWAN/TTN", "skipped"))
+        return True
+    except Exception as e:  # noqa: BLE001
+        report.append(envelope(f"dogytag:{action}", "DogyTag", "LoRaWAN/TTN", "error", error=str(e)))
         return False
 
 
