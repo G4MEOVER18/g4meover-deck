@@ -15,10 +15,12 @@ Nur für autorisierte Sicherheitstests an eigenen Netzen.
 from __future__ import annotations
 import argparse
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # deck/ importierbar
 import wpa_crack as wc  # noqa: E402
+import handshake_capture as hcap  # noqa: E402
 
 
 def _print_networks(nets):
@@ -55,6 +57,11 @@ def main() -> int:
     p_mask.add_argument("--timeout", type=int, default=3600)
     p_show = sub.add_parser("show", help="Bereits geknackte (Potfile) anzeigen")
     p_show.add_argument("hc22000")
+    p_cap = sub.add_parser("capture", help="Live von Satelliten-Serial (0x25) mitschneiden -> pcap")
+    p_cap.add_argument("port", help="Serial-Port des Satelliten (z.B. COM26)")
+    p_cap.add_argument("out_pcap", nargs="?", default="handshake.pcap")
+    p_cap.add_argument("--seconds", type=float, default=30.0)
+    p_cap.add_argument("--wordlist", help="wenn gesetzt: direkt Dictionary-Angriff anschließen")
     args = ap.parse_args()
 
     if args.cmd == "detect":
@@ -69,6 +76,17 @@ def main() -> int:
     if args.cmd == "show":
         _print_cracked({"cracked": wc.show_cracked(args.hc22000)})
         return 0
+
+    if args.cmd == "capture":
+        print(f"Schneide {args.seconds:.0f}s an {args.port} mit ([HSRAW]-Frames) ...")
+        cap = hcap.capture_from_serial(args.port, args.out_pcap,
+                                       seconds=args.seconds, base_ts=int(time.time()))
+        if cap.get("error"):
+            print("Fehler:", cap["error"]); return 1
+        print(f"{cap['frames']} EAPOL-Frames -> {cap['pcap']}")
+        args.pcap = cap["pcap"]  # weiter wie 'info'/'dict'
+        args.timeout = 3600
+        args.cmd = "dict" if args.wordlist else "info"
 
     # info/dict/mask: erst konvertieren
     conv = wc.pcap_to_hc22000(args.pcap)
