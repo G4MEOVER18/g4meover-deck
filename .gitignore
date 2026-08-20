@@ -7,3 +7,11 @@ venv/
 secret_local.py
 deck/secret_local.py
 .g4meover-deck/
+
+# Sensible Captures (echte Handshakes/Signale) NIE committen
+*.pcap
+*.pcapng
+*.cap
+*.hc22000
+captures/
+*_YourDataMyData*
