@@ -1,5 +1,7 @@
 # G4MEOVER Deck — Ökosystem-OS für Raspberry Pi 4
 
+[![CI](https://github.com/G4MEOVER18/g4meover-deck/actions/workflows/python-lint.yml/badge.svg)](https://github.com/G4MEOVER18/g4meover-deck/actions/workflows/python-lint.yml)
+
 Das **Gehirn** des G4MEOVER-Pentest-Ökosystems. Verwandelt einen Raspberry Pi 4 in
 die zentrale Steuerung, die **Flipper Zero**, **ESP32-Satelliten** (WROOM-Relay,
 Heltec LoRa v3, LilyGo T-Dongle S3) und den Pi selbst über **alle Funkwege** hinweg
